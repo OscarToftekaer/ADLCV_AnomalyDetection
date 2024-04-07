@@ -48,7 +48,7 @@ class CheXpertDataSet(Dataset):
     def __getitem__(self, index):
         """Take the index of item and returns the image and its labels"""
         image_name = self.image_names[index]
-        image = Image.open(image_name).convert('RGB')
+        image = Image.open(image_name).convert('RGB') #! The image is in grayscale
         label = self.labels[index]
         if self.transform is not None:
             image = self.transform(image)
