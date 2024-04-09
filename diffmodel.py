@@ -7,7 +7,7 @@ import numpy as np
 import torch.nn.functional as F
 
 class Diffusion:
-    def __init__(self, T=500, beta_start=1e-4, beta_end=0.02, img_size=256,device="cuda"):
+    def __init__(self, T=500, beta_start=1e-4, beta_end=0.02, img_size=256, device="cuda"):
         """
         T : total diffusion steps (X_T is pure noise N(0,1))
         beta_start: value of beta for t=0
@@ -22,10 +22,14 @@ class Diffusion:
         self.device = device
         
         self.betas = self.get_betas().to(device)
-        self.alphas = 1. - self.betas
-        self.alphas_bar = torch.cumprod(self.alphas, dim=0) # cumulative products of alpha
-        self.alphas_bar_prev = torch.cat((torch.ones(1), self.alphas_bar[:-1]),0)
-        self.alphas_bar_next = torch.cat((self.alphas_bar[1:], torch.zeros(1)),0)
+        self.alphas = (1. - self.betas).to(self.device)
+        self.alphas_bar = torch.cumprod(self.alphas, dim=0).to(device) # cumulative products of alpha
+        # self.alphas_bar_prev = torch.cat((torch.ones(1), self.alphas_bar[:-1]),0).to(device)
+        self.alphas_bar_prev = torch.cat((torch.ones(1, device=device), self.alphas_bar[:-1]), 0)
+
+        # self.alphas_bar_next = torch.cat((self.alphas_bar[1:], torch.zeros(1)),0).to(device)
+        self.alphas_bar_next = torch.cat((self.alphas_bar[1:], torch.zeros(1, device=device)), 0)
+
 
 
     def get_betas(self, schedule='linear'):

@@ -5,13 +5,13 @@ from PIL import Image
 import random
 import torch
 from torch import nn
-# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import torchvision
 from tqdm import tqdm
 from torch import optim
-# import logging
+import logging
 
-# logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO, datefmt="%I:%M:%S")
+logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s', level=logging.INFO, datefmt='%I:%M:%S')
 
 from diffmodel import Diffusion
 from classifiermodel import UNet
@@ -47,21 +47,22 @@ def prepare_dataloader(batch_size):
     transform = transforms.Compose([
     transforms.ToTensor(),                # from [0,255] to range [0.0,1.0]
     transforms.Normalize((0.5,), (0.5,)),   # range [-1,1]
-    transforms.Resize(256,256)   #resizing to min dimensions
+    transforms.Resize(size=(256,256))   #resizing to min dimensions
     ])
     dataset = CheXpertDataset(transform, num_samples=DATASET_SIZE, seed=SEED)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     return dataloader
 
 def create_result_folders(experiment_name):
-    os.makedirs("models", exist_ok=True)
-    os.makedirs("results", exist_ok=True)
-    os.makedirs(os.path.join("models", experiment_name), exist_ok=True)
-    os.makedirs(os.path.join("results", experiment_name), exist_ok=True)
+    os.makedirs('models', exist_ok=True)
+    os.makedirs('results', exist_ok=True)
+    os.makedirs(os.path.join('models', experiment_name), exist_ok=True)
+    os.makedirs(os.path.join('results', experiment_name), exist_ok=True)
 
-def train(device='cpu', T=500, img_size=16, input_channels=3, channels=32, time_dim=256,
-          batch_size=100, lr=1e-3, num_epochs=30, experiment_name="ddpm", show=False):
-    """Implements algrorithm 1 (Training) from the ddpm paper at page 4"""
+def train(device='cuda', T=500, img_size=256, input_channels=1, channels=32, time_dim=256,
+          batch_size=100, lr=1e-3, num_epochs=1, experiment_name='ddpm', show=False):
+    '''Implements algrorithm 1 (Training) from the ddpm paper at page 4'''
+    print('entering traning')
     create_result_folders(experiment_name)
     dataloader = prepare_dataloader(batch_size)
 
@@ -72,17 +73,16 @@ def train(device='cpu', T=500, img_size=16, input_channels=3, channels=32, time_
     optimizer = optim.AdamW(model.parameters(), lr=lr)
     mse = nn.MSELoss() # use MSE loss 
     
-    # logger = SummaryWriter(os.path.join("runs", experiment_name))
+    logger = SummaryWriter(os.path.join('runs', experiment_name))
     l = len(dataloader)
 
     for epoch in range(1, num_epochs + 1):
-        #logging.info(f"Starting epoch {epoch}:")
+        logging.info(f'Starting epoch {epoch}:')
         pbar = tqdm(dataloader)
 
         for i, images in enumerate(pbar):
+            print('here')
             images = images.to(device)
-            print("here")
-            break
 
             # TASK 4: implement the training loop
             t = diffusion.sample_timesteps(images.shape[0]).to(device) # line 3 from the Training algorithm
@@ -97,19 +97,20 @@ def train(device='cpu', T=500, img_size=16, input_channels=3, channels=32, time_
 
 
             pbar.set_postfix(MSE=loss.item())
-            # logger.add_scalar("MSE", loss.item(), global_step=epoch * l + i)
+            logger.add_scalar('MSE', loss.item(), global_step=epoch * l + i)
 
         sampled_images = diffusion.p_sample_loop(model, batch_size=images.shape[0])
-        save_images(images=sampled_images, path=os.path.join("results", experiment_name, f"{epoch}.jpg"),
-                    show=show, title=f'Epoch {epoch}')
-        torch.save(model.state_dict(), os.path.join("models", experiment_name, f"weights-{epoch}.pt"))
+        # save_images(images=sampled_images, path=os.path.join('results', experiment_name, f'{epoch}.jpg'),
+        #             show=show, title=f'Epoch {epoch}')
+        # torch.save(model.state_dict(), os.path.join('models', experiment_name, f'weights-{epoch}.pt'))
 
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  
-    print(f"Model will run on {device}")
+    print(f'Model will run on {device}')
     set_seed(seed=SEED)
     train(device=device)
+    print('finito')
 
 if __name__ == '__main__':
     main()
