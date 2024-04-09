@@ -1,58 +1,58 @@
-import csv
-from PIL import Image
-from torch.utils.data import Dataset, DataLoader
-import torch
-import torch.nn as nn
+import os
+import numpy as np
+import random
+from torchvision import transforms
+from torch.utils.data import Dataset
 
-class CheXpertDataSet(Dataset):
-    def __init__(self, data_PATH, transform = None, policy = "ones"):
-        """
-        data_PATH: path to the file containing images with corresponding labels.
-        transform: optional transform to be applied on a sample.
-        Upolicy: name the policy with regard to the uncertain labels.
-        """
-        image_names = []
-        labels = []
+def set_seed(seed=1):
+    np.random.seed(seed)
+    random.seed(seed)
 
-        with open(data_PATH, "r") as f:
-            csvReader = csv.reader(f)
-            next(csvReader, None) # skip the header
-            for line in csvReader:
-                image_name = line[0]
-                label = line[5:]
-                
-                for i in range(14):
-                    if label[i]:
-                        a = float(label[i])
-                        if a == 1:
-                            label[i] = 1
-                        elif a == -1:
-                            if policy == "ones":
-                                label[i] = 1
-                            elif policy == "zeroes":
-                                label[i] = 0
-                            else:
-                                label[i] = 0
-                        else:
-                            label[i] = 0
-                    else:
-                        label[i] = 0
-                        
-                image_names.append('./' + image_name)
-                labels.append(label)
-
-        self.image_names = image_names
-        self.labels = labels
+class CheXpertDataset(Dataset):
+    def __init__(self, 
+                 transform, 
+                 data_dir='./data_frontal/',
+                 num_samples=None,
+                 seed=1
+    ):
+        self.data_dir = data_dir
+        self.npy_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.npy')]
+        self.num_samples = num_samples if num_samples is not None else len(self.npy_files)
+        self.seed = seed
+        
+        # Optionally, reduce dataset size
+        if self.num_samples < len(self.npy_files):
+            set_seed(seed=self.seed)
+            self.npy_files = random.sample(self.npy_files, self.num_samples)
+        
+        print(f"Dataset size: {len(self.npy_files)}")
+        
         self.transform = transform
-
-    def __getitem__(self, index):
-        """Take the index of item and returns the image and its labels"""
-        image_name = self.image_names[index]
-        image = Image.open(image_name).convert('RGB') #! The image is in grayscale
-        label = self.labels[index]
-        if self.transform is not None:
-            image = self.transform(image)
-        return image, torch.FloatTensor(label)
-
+                
+    # Return the number of images in the dataset
     def __len__(self):
-        return len(self.image_names)
+        return self.num_samples
+    
+    # Get the image at a given index
+    def __getitem__(self, idx):
+        npy_path = self.npy_files[idx]
+        image = np.load(npy_path)
+        
+        if self.transform:
+            image = self.transform(image)
+        else:
+            # Ensure image is in the format CHW for PyTorch
+            if image.ndim == 2:  # For grayscale images
+                image = image[:, :, None]
+            image = transforms.ToTensor()(image)
+        
+        return image
+
+# Example usage
+# Assuming you have torchvision transforms defined as needed
+#transform = transforms.Compose([
+#    transforms.ToTensor(),  # Adjust or add transforms as needed
+#])
+
+#dataset = CheXpertDataset(transform=transform, data_dir='./data_frontal/', num_samples=10000, seed=1)
+#print(f"Loaded dataset with {len(dataset)} samples.")
