@@ -24,8 +24,8 @@ class Diffusion:
         self.betas = self.get_betas().to(device)
         self.alphas = 1. - self.betas
         self.alphas_bar = torch.cumprod(self.alphas, dim=0) # cumulative products of alpha
-        self.alphas_bar_prev = torch.append(1.0, self.alphas_bar[:-1])
-        self.alphas_bar_next = torch.append(self.alphas_bar[1:], 0.0)
+        self.alphas_bar_prev = torch.cat((torch.ones(1), self.alphas_bar[:-1]),0)
+        self.alphas_bar_next = torch.cat((self.alphas_bar[1:], torch.zeros(1)),0)
 
 
     def get_betas(self, schedule='linear'):
