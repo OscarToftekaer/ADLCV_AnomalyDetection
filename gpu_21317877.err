@@ -1,0 +1,30 @@
+Loaded module: cuda/12.1.1
+Loaded dependency [python3/3.11.3]: gcc/12.2.0-binutils-2.39
+Loaded dependency [python3/3.11.3]: sqlite3/3.40.1
+Loaded module: python3/3.11.3
+
+Loading python3/3.11.3
+  Loading requirement: gcc/12.2.0-binutils-2.39 sqlite3/3.40.1
+  0%|          | 0/8277 [00:00<?, ?it/s]/zhome/31/c/147318/irishcream/lib/python3.10/site-packages/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+  warnings.warn(
+  0%|          | 0/8277 [00:08<?, ?it/s]
+Traceback (most recent call last):
+  File "/zhome/31/c/147318/Advaned_DLCV/exam_project/ADLCV_AnomalyDetection/train.py", line 127, in <module>
+    train(device=device)
+  File "/zhome/31/c/147318/Advaned_DLCV/exam_project/ADLCV_AnomalyDetection/train.py", line 87, in train
+    predicted_noise = model(x_t, t) # predict noise of x_t using the UNet
+  File "/zhome/31/c/147318/irishcream/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/zhome/31/c/147318/Advaned_DLCV/exam_project/ADLCV_AnomalyDetection/classifiermodel.py", line 155, in forward
+    x = self.sa6(x)
+  File "/zhome/31/c/147318/irishcream/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/zhome/31/c/147318/Advaned_DLCV/exam_project/ADLCV_AnomalyDetection/classifiermodel.py", line 23, in forward
+    attention_value, _ = self.mha(x_ln, x_ln, x_ln)
+  File "/zhome/31/c/147318/irishcream/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/zhome/31/c/147318/irishcream/lib/python3.10/site-packages/torch/nn/modules/activation.py", line 1205, in forward
+    attn_output, attn_output_weights = F.multi_head_attention_forward(
+  File "/zhome/31/c/147318/irishcream/lib/python3.10/site-packages/torch/nn/functional.py", line 5338, in multi_head_attention_forward
+    attn_output_weights = torch.bmm(q_scaled, k.transpose(-2, -1))
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 64.00 GiB (GPU 0; 39.38 GiB total capacity; 9.05 GiB already allocated; 26.68 GiB free; 12.19 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
