@@ -111,7 +111,7 @@ if __name__ == '__main__':
         print("with logging")
             
         wandb.init(
-        project="ADLCV_AnomalyDetection", entity="mao-lunde",
+        project="ADLCV_AnomalyDetection", entity="ADLCV_exam_project",
         config={
         "device": device,
         "architecture": "UNet"

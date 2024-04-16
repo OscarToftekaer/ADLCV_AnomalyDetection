@@ -1,4 +1,8 @@
 /data_frontal/
 /CheXpert/
 /assets/
+/models/
+/results/
+/wandb/
+*.txt
 __pycache__
