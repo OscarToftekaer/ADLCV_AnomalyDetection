@@ -2,52 +2,66 @@ import zipfile
 from PIL import Image
 import numpy as np
 import os
+import csv
 
 # Path to your ZIP file
-zip_path = '/zhome/31/c/147318/Advaned_DLCV/exam_project/archive.zip'
+zip_path = '/zhome/31/c/147318/Advaned_DLCV/exam_project/ADLCV_AnomalyDetection/archive.zip'
 
-# Destination directory for extracted images (temporary)
-destination_dir = './data_frontal/'
-if not os.path.exists(destination_dir):
-    os.makedirs(destination_dir)
-
+# Path to the CSV file
+csv_path = '/zhome/31/c/147318/Advaned_DLCV/exam_project/ADLCV_AnomalyDetection/che_pm_shortcut_labels.csv'
 
 # Base path within the ZIP to start searching for images
 base_path = 'CheXpert-v1.0-small/train/'
 
+# Destination directory for extracted images
+destination_dir = './data_frontal/'
+if not os.path.exists(destination_dir):
+    os.makedirs(destination_dir)
+
+# Read the CSV to get classification info
+image_labels = {}
+with open(csv_path, newline='') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        if row['PM'] == '0':  # Only consider images without pacemakers
+            image_labels[row['img_name']] = row['Cardiomegaly']
+
+# Counters for images with and without cardiomegaly
+cardio_count = 0
+non_cardio_count = 0
+
 # Open the ZIP file
 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-    # Initialize a counter for the number of files processed
-    count = 0
-    
     # Iterate through each file in the ZIP archive
     for f in zip_ref.namelist():
-        # Check if the file matches the criteria and increment the counter if it does
-        if f.startswith(base_path) and f.endswith('_frontal.jpg') and not f.startswith('.') and not f.endswith('._view1_frontal.jpg') and count < 10000:
-            # Extract the specific file to the destination directory
-            extracted_file_path = zip_ref.extract(f, destination_dir)
+        if f.startswith(base_path) and f.endswith('_frontal.jpg') and f.split('/')[-1] in image_labels:
+            cardiomegaly = image_labels[f.split('/')[-1]]
             
-            # Convert extracted file path to a format compatible with PIL
+            # Check and update counts accordingly
+            if cardiomegaly == '1' and cardio_count < 5000:
+                cardio_count += 1
+            elif cardiomegaly == '0' and non_cardio_count < 5000:
+                non_cardio_count += 1
+            else:
+                continue  # Skip if either count exceeds 5000
+            
+            # Extract and process image
+            subfolder = 'Cardiomegaly_' + cardiomegaly
+            final_path = os.path.join(destination_dir, subfolder)
+            if not os.path.exists(final_path):
+                os.makedirs(final_path)
+            extracted_file_path = zip_ref.extract(f, final_path)
+            
             with Image.open(extracted_file_path) as img:
-                # Convert the image to a NumPy array
                 img_array = np.array(img)
-                
-                # Define the output path for the .npy file, replacing directory separators with underscores
                 npy_file_name = f.replace('/', '_').replace('.jpg', '.npy')
-                npy_file_path = os.path.join(destination_dir, npy_file_name)
-
-                
-                # Save the NumPy array to a .npy file
+                npy_file_path = os.path.join(final_path, npy_file_name)
                 np.save(npy_file_path, img_array)
             
-            # Delete the extracted JPEG file to save space
             os.remove(extracted_file_path)
             
-            # Increment the counter
-            count += 1
-            
-            # Break the loop if 10,000 files have been processed
-            if count >= 10000:
+            # Stop processing if both counts reach 5000
+            if cardio_count >= 5000 and non_cardio_count >= 5000:
                 break
 
-print(f"Processing of up to {count} images completed.")
+print("Processing completed.")
