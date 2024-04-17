@@ -14,11 +14,13 @@ from torch import optim
 from diffmodel import Diffusion
 from Unet_model import UNet
 
+from torchvision.datasets import MNIST
+
 
 DATASET_SIZE = None
 with_logging = False
 
-img_size = 16
+img_size = 64
 
 
 
@@ -45,7 +47,8 @@ def prepare_dataloader(batch_size, img_size):
     transforms.Resize(size=(img_size,img_size))   #resizing to min dimensions
     ])
     dataset = CheXpertDataset(transform, num_samples=DATASET_SIZE)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    # dataset = MNIST(root='./data', train=True, download=True, transform=transform)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     return dataloader
 
 def create_result_folders(experiment_name):
@@ -54,8 +57,8 @@ def create_result_folders(experiment_name):
     os.makedirs(os.path.join('models', experiment_name), exist_ok=True)
     os.makedirs(os.path.join('results', experiment_name), exist_ok=True)
 
-def train(device='cuda', T=5, img_size=img_size, input_channels=1, channels=32, time_dim=256,
-          batch_size=1, lr=1e-3, num_epochs=1, experiment_name='ddpm', show=False):
+def train(device='cuda', T=500, img_size=img_size, input_channels=1, channels=32, time_dim=256,
+          batch_size=1, lr=1e-3, num_epochs=10, experiment_name='ddpm', show=False):
     '''Implements algrorithm 1 (Training) from the ddpm paper at page 4'''
     print('entering traning')
     create_result_folders(experiment_name)
@@ -74,10 +77,15 @@ def train(device='cuda', T=5, img_size=img_size, input_channels=1, channels=32, 
         pbar = tqdm(dataloader)
 
         for i, images in enumerate(pbar):
-            print('start')
             images = images.to(device)
 
-            # TASK 4: implement the training loop
+            # test of q sample images
+            # tt = torch.randint(low=100, high=101, size=(images.shape[0],), device=device)
+            # x_t, _ = diffusion.q_sample(images, tt)    
+            # save_images(images=x_t, path=os.path.join('results', experiment_name, f'{epoch}_qsample_100.jpg'),
+            # show=show, title=f'Epoch {epoch}')
+        
+
             t = diffusion.sample_timesteps(images.shape[0]).to(device) # line 3 from the Training algorithm
             x_t, noise = diffusion.q_sample(images, t) # inject noise to the images (forward process), HINT: use q_sample
             predicted_noise = model(x_t, t) # predict noise of x_t using the UNet
@@ -94,11 +102,13 @@ def train(device='cuda', T=5, img_size=img_size, input_channels=1, channels=32, 
         if with_logging:
             wandb.log({"loss": loss
                     })
-            
-
-        sampled_images = diffusion.p_sample_loop(model, batch_size=images.shape[0])
-        # save_images(images=sampled_images, path=os.path.join('results', experiment_name, f'{epoch}.jpg'),
-          #          show=show, title=f'Epoch {epoch}')
+        
+        # add noise to images again
+        tt = torch.randint(low=50, high=51, size=(images.shape[0],), device=device)
+        x_t, _ = diffusion.q_sample(images, tt)    
+        sampled_images = diffusion.ddim_sample_loop(model, x_t, batch_size=images.shape[0])
+        save_images(images=sampled_images, path=os.path.join('results', experiment_name, f'{epoch}.jpg'),
+                   show=show, title=f'Epoch {epoch}')
         torch.save(model.state_dict(), os.path.join('models', experiment_name, f'weights-{epoch}.pt'))
         print('end')
 

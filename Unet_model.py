@@ -18,7 +18,6 @@ class SelfAttention(nn.Module):
         )
 
     def forward(self, x):
-        print(x.shape)
         x = x.view(-1, self.channels, self.size * self.size).swapaxes(1, 2)
         x_ln = self.ln(x)
         attention_value, _ = self.mha(x_ln, x_ln, x_ln)
