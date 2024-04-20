@@ -18,6 +18,7 @@ from torchvision.datasets import MNIST
 
 
 DATASET_SIZE = None
+DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/diffusion_split'
 with_logging = False
 
 img_size = 64
@@ -46,7 +47,7 @@ def prepare_dataloader(batch_size, img_size):
     transforms.Normalize((0.5,), (0.5,)),   # range [-1,1]
     transforms.Resize(size=(img_size,img_size))   #resizing to min dimensions
     ])
-    dataset = CheXpertDataset(transform, num_samples=DATASET_SIZE)
+    dataset = CheXpertDataset(transform, data_dir = DATA_DIR, num_samples=DATASET_SIZE)
     # dataset = MNIST(root='./data', train=True, download=True, transform=transform)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     return dataloader

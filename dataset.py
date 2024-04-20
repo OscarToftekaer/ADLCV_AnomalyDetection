@@ -17,7 +17,7 @@ def set_seed(seed=1):
 class CheXpertDataset(Dataset):
     def __init__(self, 
                  transform, 
-                 data_dir='/dtu/datasets1/ashery-chexpert/data/diffusion_split',
+                 data_dir,
                  num_samples=None,
                  seed=1
     ):
