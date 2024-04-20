@@ -49,7 +49,7 @@ def save_images(images, path, show=True, title=None, nrow=10):
     ndarr = grid.permute(1, 2, 0).to('cpu').numpy()
     if title is not None:
         plt.title(title)
-    plt.imshow(ndarr)
+    plt.imshow(ndarr,cmap='gray')
     plt.axis('off')
     if path is not None:
         plt.savefig(path, bbox_inches='tight', pad_inches=0)
