@@ -7,4 +7,3 @@
 *.txt
 __pycache__
 *.zip
-extract_images.py

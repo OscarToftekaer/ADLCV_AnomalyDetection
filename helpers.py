@@ -2,6 +2,8 @@ import numpy as np
 import random
 import torch
 import matplotlib.pyplot as plt
+import torchvision
+import os
 
 def set_seed(seed=1):
     random.seed(seed)
@@ -55,7 +57,7 @@ def save_images(images, path, show=True, title=None, nrow=10):
         plt.show()
     plt.close()
 
-def prepare_dataloader(batch_size, img_size):
+def prepare_dataloader(batch_size, img_size,data_dir,dataset_size):
     import torchvision.transforms as transforms
     from torch.utils.data import DataLoader
     from dataset import CheXpertDataset
@@ -64,7 +66,7 @@ def prepare_dataloader(batch_size, img_size):
     transforms.Normalize((0.5,), (0.5,)),   # range [-1,1]
     transforms.Resize(size=(img_size,img_size))   #resizing to min dimensions
     ])
-    dataset = CheXpertDataset(transform, data_dir = DATA_DIR, num_samples=DATASET_SIZE)
+    dataset = CheXpertDataset(transform, data_dir = data_dir, num_samples=dataset_size)
     # dataset = MNIST(root='./data', train=True, download=True, transform=transform)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     return dataloader
