@@ -4,6 +4,13 @@ import torch
 from torch import nn
 import wandb
 import torchvision.transforms as transforms
+from skimage.filters import threshold_otsu
+
+def visualize(img):
+    _min = img.min()
+    _max = img.max()
+    normalized_img = (img - _min)/ (_max - _min)
+    return normalized_img
 
 
 from Unet_model import UNet
@@ -19,7 +26,7 @@ model = UNet(img_size=128, c_in=1, c_out=1,
                 time_dim=256, channels=32, device=device).to(device)
 model.eval()
 model.to(device)
-model.load_state_dict(torch.load('models/ddim/weights-1.pt', map_location=device)) # load the given model
+model.load_state_dict(torch.load('models/ddpm/weights-30_v2.pt', map_location=device)) # load the given model
 
 diffusion = Diffusion(img_size=128, T=500, beta_start=1e-4, beta_end=0.02, device=device)
 
@@ -29,24 +36,27 @@ def make_anomaly_map(path_to_img, model):
     images = np.load(path_to_img)
 
     resize_transform = transforms.Compose([
-            transforms.ToTensor(),                
-            transforms.Normalize((0.5,), (0.5,)),   
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,)),                 
             transforms.Resize(size=(128,128))   
             ])
 
     images = resize_transform(images).to(device)
 
-    t = torch.tensor(50).unsqueeze(0).to(device)
-    x_t, _ = diffusion.q_sample(images, t)    
-    sampled_images = diffusion.ddim_sample_loop(model, x_t, batch_size=images.shape[0])
+    t = torch.tensor(100).unsqueeze(0).to(device)
+    x_t, _ = diffusion.q_sample(images, t)   
+    sampled_images = diffusion.ddim_sample_loop(model, x_t, 100, batch_size=images.shape[0])
     sampled_images = sampled_images.squeeze(0)
     images = images.squeeze(0)
-    diff_images = torch.abs(torch.tensor(images) - sampled_images) 
+    diff_images = (images - sampled_images).cpu().numpy()
+    thresh = torch.tensor(threshold_otsu(diff_images))
+    diff_images = torch.where(torch.tensor(diff_images) > thresh, 1, 0)  #this is our predicted binary segmentation
+
     diff_images = diff_images.permute(1, 2, 0)
-    diff_images_np = diff_images.cpu().numpy()
 
 
-    
+
+
     fig, axes = plt.subplots(1, 4, figsize=(16, 6))
 
     # Original image
@@ -65,13 +75,13 @@ def make_anomaly_map(path_to_img, model):
     axes[2].axis('off')
 
     # Anomaly map
-    axes[3].imshow(diff_images_np, cmap='copper', interpolation='nearest')
+    axes[3].imshow(diff_images.cpu().numpy().squeeze(), cmap='copper')
     axes[3].set_title('Anomaly Map (Pixel-wise Difference)')
     axes[3].axis('off')
 
 
     plt.tight_layout()
-    plt.savefig('test_map.jpg')
+    plt.savefig('test_map_20.jpg')
 
     return
 
