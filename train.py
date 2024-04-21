@@ -29,7 +29,7 @@ def train(device='cuda', T=500, img_size=img_size, input_channels=1, channels=32
     '''Implements algrorithm 1 (Training) from the ddpm paper at page 4'''
     print('entering traning')
     create_result_folders(experiment_name)
-    dataloader = prepare_dataloader(batch_size, img_size,data_dir=DATA_DIR,dataset_size=DATASET_SIZE)
+    train_loader,_ = prepare_dataloader(batch_size, img_size,data_dir=DATA_DIR,dataset_size=DATASET_SIZE)
 
     model = UNet(img_size=img_size, c_in=input_channels, c_out=input_channels, 
                  time_dim=time_dim,channels=channels, device=device).to(device)
@@ -38,10 +38,10 @@ def train(device='cuda', T=500, img_size=img_size, input_channels=1, channels=32
     optimizer = optim.AdamW(model.parameters(), lr=lr)
     mse = nn.MSELoss() # use MSE loss 
     
-    l = len(dataloader)
+    l = len(train_loader)
 
     for epoch in range(1, num_epochs + 1):
-        pbar = tqdm(dataloader)
+        pbar = tqdm(train_loader)
 
         for i, images in enumerate(pbar):
             images = images.to(device)
