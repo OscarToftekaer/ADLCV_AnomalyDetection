@@ -6,6 +6,15 @@ import numpy as np
 from scipy.linalg import sqrtm
 from PIL import Image
 
+from helpers import prepare_dataloader
+
+DATASET_SIZE = None
+DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/diffusion_split'
+batch_size = 1
+img_size = 128
+
+_,val_loader = prepare_dataloader(batch_size, img_size,data_dir=DATA_DIR,dataset_size=DATASET_SIZE)
+
 
 
 # L1 Loss between val images and samples
@@ -50,9 +59,8 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 # Function to get features from inception
 def get_features(images, model, device, batch_size=32):
-    dataloader = DataLoader(images, batch_size=batch_size)
     features = []
-    for batch in dataloader:
+    for batch in val_loader:
         with torch.no_grad():
             pred = model(batch.to(device))
             features.append(pred.detach().cpu().numpy())
