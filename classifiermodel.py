@@ -6,6 +6,7 @@ from torchvision.models import resnet18, ResNet18_Weights
 class ResNet18(nn.Module):
     def __init__(self, pretrained=True, num_classes=2):
         super(ResNet18, self).__init__()
+
         weights = ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
         self.clf = resnet18(weights=weights)
         
