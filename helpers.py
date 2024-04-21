@@ -66,10 +66,17 @@ def prepare_dataloader(batch_size, img_size,data_dir,dataset_size):
     transforms.Normalize((0.5,), (0.5,)),   # range [-1,1]
     transforms.Resize(size=(img_size,img_size))   #resizing to min dimensions
     ])
+    
     dataset = CheXpertDataset(transform, data_dir = data_dir, num_samples=dataset_size)
-    # dataset = MNIST(root='./data', train=True, download=True, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    return dataloader
+    # Split dataset into train and validation sets
+    train_size = int(0.98 * len(dataset))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+    # Define data loaders
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+    return train_loader, val_loader
 
 def create_result_folders(experiment_name):
     os.makedirs('models', exist_ok=True)
