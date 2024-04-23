@@ -21,7 +21,7 @@ DATASET_SIZE = None
 DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/diffusion_split'
 with_logging = False
 
-img_size = 64
+img_size = 128
 
 
 def train(device='cuda', T=500, img_size=img_size, input_channels=1, channels=32, time_dim=256,
