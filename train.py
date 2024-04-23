@@ -25,7 +25,7 @@ img_size = 128
 
 
 def train(device='cuda', T=500, img_size=img_size, input_channels=1, channels=32, time_dim=256,
-          batch_size=1, lr=1e-3, num_epochs=10, experiment_name='ddpm', show=False):
+          batch_size=2, lr=1e-3, num_epochs=100, experiment_name='ddpm', show=False):
     '''Implements algrorithm 1 (Training) from the ddpm paper at page 4'''
     print('entering traning')
     create_result_folders(experiment_name)
@@ -46,13 +46,7 @@ def train(device='cuda', T=500, img_size=img_size, input_channels=1, channels=32
         for i, images in enumerate(pbar):
             images = images.to(device)
 
-            # test of q sample images
-            # tt = torch.randint(low=100, high=101, size=(images.shape[0],), device=device)
-            # x_t, _ = diffusion.q_sample(images, tt)    
-            # save_images(images=x_t, path=os.path.join('results', experiment_name, f'{epoch}_qsample_100.jpg'),
-            # show=show, title=f'Epoch {epoch}')
         
-
             t = diffusion.sample_timesteps(images.shape[0]).to(device) # line 3 from the Training algorithm
             x_t, noise = diffusion.q_sample(images, t) # inject noise to the images (forward process), HINT: use q_sample
             predicted_noise = model(x_t, t) # predict noise of x_t using the UNet
@@ -71,12 +65,13 @@ def train(device='cuda', T=500, img_size=img_size, input_channels=1, channels=32
                     })
         
         # add noise to images again
-        tt = torch.randint(low=50, high=51, size=(images.shape[0],), device=device)
-        x_t, _ = diffusion.q_sample(images, tt)    
-        sampled_images = diffusion.ddim_sample_loop(model, x_t, batch_size=images.shape[0])
-        save_images(images=sampled_images, path=os.path.join('results', experiment_name, f'{epoch}.jpg'),
+        t_step = 300
+        t = torch.tensor(t_step).unsqueeze(0).to(device)
+        x_t, _ = diffusion.q_sample(images, t)   
+        sampled_images =  diffusion.ddim_sample_loop(model, x_t, t_step, batch_size=images.shape[0])
+        save_images(images=sampled_images, path=os.path.join('results', experiment_name, f'{epoch}_size128.jpg'),
                    show=show, title=f'Epoch {epoch}')
-        torch.save(model.state_dict(), os.path.join('models', experiment_name, f'weights-{epoch}.pt'))
+        torch.save(model.state_dict(), os.path.join('models', experiment_name, f'weights-{epoch}-size128.pt'))
         print('end')
 
 
