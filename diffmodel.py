@@ -56,29 +56,6 @@ class Diffusion:
         noise = torch.randn_like(x)
         return sqrt_alpha_bar * x + sqrt_one_minus_alpha_bar * noise, noise
     
-
-    # def x0_pred(self,model,x_t, t):
-    #     """
-    #     Predict x0 from x_t from epsilon as 
-
-    #     x0 = sqrt(1/alpha_t) * x_t - sqrt(1/alpha_t-1) * epsilon
-    #     """
-    #     # TODO: Check the dimensions of the tensors of x_t 
-    #     eps = model(x_t, t)
-    #     sqrt_recip_alphas_cumprod = torch.sqrt(1.0 / self.alphas_bar[t])[:, None, None, None]
-    #     sqrt_recipm1_alphas_cumprod = torch.sqrt(1.0 / self.alphas_bar[t] - 1)[:, None, None, None]
-    #     x0 = sqrt_recip_alphas_cumprod * x_t + sqrt_recipm1_alphas_cumprod * eps
-
-    #     return x0
-
-    # def _predict_eps_from_xstart(self,model, x_t, t):
-    #     # gradient scale
-    #     sqrt_recip_alphas_cumprod = torch.sqrt(1.0 / self.alphas_bar[t])[:, None, None, None]
-    #     sqrt_recipm1_alphas_cumprod = torch.sqrt(1.0 / self.alphas_bar[t] )[:, None, None, None]
-    #     x0 = self.x0_pred(model, x_t, t)
-
-    #     return (sqrt_recip_alphas_cumprod * x_t - x0) / sqrt_recipm1_alphas_cumprod
-
       
     def ddim_sample_onestep(self, model, x_t, i, batch_size):
         """
@@ -122,8 +99,8 @@ class Diffusion:
 
             for i in pbar:
                 # T-1, T-2, .... 0
-                x = self.ddim_sample_onestep(model, x, t_step, batch_size)
-                if timesteps_to_save is not None and t_step in timesteps_to_save:
+                x = self.ddim_sample_onestep(model, x, i, batch_size)
+                if timesteps_to_save is not None and i in timesteps_to_save:
                     x_itermediate = (x.clamp(-1, 1) + 1) / 2
                     x_itermediate = (x_itermediate * 255).type(torch.uint8)
                     intermediates.append(x_itermediate)
