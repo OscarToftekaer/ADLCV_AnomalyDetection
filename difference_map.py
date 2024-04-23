@@ -16,13 +16,13 @@ from diffmodel import Diffusion
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
 
 #load model
-model = UNet(img_size=96, c_in=1, c_out=1, 
+model = UNet(img_size=128, c_in=1, c_out=1, 
                 time_dim=256, channels=32, device=device).to(device)
 model.eval()
 model.to(device)
 model.load_state_dict(torch.load('models/ddpm/weights-50_v2.pt', map_location=device)) # load the given model
 
-diffusion = Diffusion(img_size=96, T=500, beta_start=1e-4, beta_end=0.02, device=device)
+diffusion = Diffusion(img_size=128, T=500, beta_start=1e-4, beta_end=0.02, device=device)
 
 
 def make_anomaly_map(image_paths, model):
@@ -34,7 +34,7 @@ def make_anomaly_map(image_paths, model):
         resize_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,)),                 
-            transforms.Resize(size=(96, 96))   
+            transforms.Resize(size=(128, 128))   
         ])
         resize_transform_sample = transforms.Compose([
             transforms.ToTensor(),
