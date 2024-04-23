@@ -17,7 +17,7 @@ from plots import plotROC
 sns.set_theme(style='whitegrid')
 
 # Constants
-DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/classification_split'
+DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/inference_split'
 IMG_SIZE = 128
 BATCH_SIZE = 32
 
@@ -30,7 +30,7 @@ def load_data(data_dir, img_size, batch_size):
     ])
 
     # Initialize dataset
-    dataset = CLF_Dataset(transform=transform, data_dir=data_dir)
+    dataset = CLF_Dataset(transform=transform, data_dir=data_dir,inference=True)
 
     # Define data loader
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
@@ -75,6 +75,7 @@ if __name__ == '__main__':
 
     print('scores:')
     print(predictions)
+    print(sum(predictions))
     print('labels')
     print(labels)
     print('accuracy')

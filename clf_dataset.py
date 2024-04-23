@@ -9,10 +9,11 @@ class CLF_Dataset(Dataset):
     def __init__(self, 
                  transform, 
                  data_dir,
+                 inference = False,
                  num_samples=None,
                  seed=1
     ):
-
+        self.inference = inference
         self.data_dir = data_dir
         self.npy_files = []
         for folder in os.listdir(data_dir):
@@ -60,8 +61,12 @@ class CLF_Dataset(Dataset):
         first_part_relative_path = relative_path.split('/')[0]  # Take only the first part
         
         # Assign label based on the first part of the relative path
-        assert first_part_relative_path in ['cla_NPMhealthy', 'cla_PMill'], f"Unexpected class: {first_part_relative_path}"
-        label = 0 if first_part_relative_path == 'cla_NPMhealthy' else 1
+        if self.inference:
+            assert first_part_relative_path in ['inf_PMill','inf_PMhealthy'], f"Unexpected class: {first_part_relative_path}"
+            label = 0 if first_part_relative_path == 'inf_PMhealthy' else 1
+        else:
+            assert first_part_relative_path in ['cla_NPMhealthy', 'cla_PMill'], f"Unexpected class: {first_part_relative_path}"
+            label = 0 if first_part_relative_path == 'cla_NPMhealthy' else 1
         
         return image, label
 
