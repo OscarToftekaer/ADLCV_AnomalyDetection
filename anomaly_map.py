@@ -26,7 +26,7 @@ model = UNet(img_size=128, c_in=1, c_out=1,
                 time_dim=256, channels=32, device=device).to(device)
 model.eval()
 model.to(device)
-model.load_state_dict(torch.load('models/ddpm/weights-30_v2.pt', map_location=device)) # load the given model
+model.load_state_dict(torch.load('models/ddpm/weights-40_v2.pt', map_location=device)) # load the given model
 
 diffusion = Diffusion(img_size=128, T=500, beta_start=1e-4, beta_end=0.02, device=device)
 
@@ -43,9 +43,10 @@ def make_anomaly_map(path_to_img, model):
 
     images = resize_transform(images).to(device)
 
-    t = torch.tensor(100).unsqueeze(0).to(device)
+    t_step = 150
+    t = torch.tensor(t_step).unsqueeze(0).to(device)
     x_t, _ = diffusion.q_sample(images, t)   
-    sampled_images = diffusion.ddim_sample_loop(model, x_t, 100, batch_size=images.shape[0])
+    sampled_images = diffusion.ddim_sample_loop(model, x_t, t_step, batch_size=images.shape[0])
     sampled_images = sampled_images.squeeze(0)
     images = images.squeeze(0)
     diff_images = (images - sampled_images).cpu().numpy()
@@ -81,7 +82,7 @@ def make_anomaly_map(path_to_img, model):
 
 
     plt.tight_layout()
-    plt.savefig('test_map_20.jpg')
+    plt.savefig('test_map_40.jpg')
 
     return
 
