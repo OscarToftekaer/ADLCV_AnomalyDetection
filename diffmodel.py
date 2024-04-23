@@ -97,26 +97,10 @@ class Diffusion:
                     (self.alphas_bar_prev[t] * (1 - self.alphas_bar[t])) / self.alphas_bar[t])[:, None, None, None]) * eps_theta 
         )
 
-        # eps = self._predict_eps_from_xstart(model, x_t, t)
-        # x0 = self.x0_pred(model, x_t, t)
-                
-        # Equation 12.
-       #  return x0 * torch.sqrt(self.alphas_bar_prev) + torch.sqrt(1-self.alphas_bar_prev) * eps
         return x_t_minus_one
     
-    # def ddim_reverse_sample(self, model, x_t,t):
-    #     """
-    #     Sample x_{t+1} from the model using DDIM reverse ODE.
-    #     """
 
-    #     eps = self._predict_eps_from_xstart(model, x_t, t)
-    #     x0 = self.x0_pred(model, x_t, t)
-
-    #             # Equation 12. reversed
-    #     return x0 * torch.sqrt(self.alphas_bar_next) + torch.sqrt(1-self.alphas_bar_next) * eps
-
-
-    def ddim_sample_loop(self, model, x, batch_size, timesteps_to_save=None, verbose=True):
+    def ddim_sample_loop(self, model, x, t_step, batch_size, timesteps_to_save=None, verbose=True):
         """
         Generate samples from the model using DDIM.
 
@@ -127,9 +111,9 @@ class Diffusion:
         """
         if verbose:
             logging.info(f"Sampling {batch_size} new images....")
-            pbar = tqdm(reversed(range(1, 100)), position=0, total=self.T-1)
+            pbar = tqdm(reversed(range(1, t_step)), position=0, total=t_step-1)
         else :
-            pbar = reversed(range(1, 100))
+            pbar = reversed(range(1, t_step))
             
         model.eval()
         if timesteps_to_save is not None:
@@ -138,8 +122,8 @@ class Diffusion:
 
             for i in pbar:
                 # T-1, T-2, .... 0
-                x = self.ddim_sample_onestep(model, x, i, batch_size)
-                if timesteps_to_save is not None and i in timesteps_to_save:
+                x = self.ddim_sample_onestep(model, x, t_step, batch_size)
+                if timesteps_to_save is not None and t_step in timesteps_to_save:
                     x_itermediate = (x.clamp(-1, 1) + 1) / 2
                     x_itermediate = (x_itermediate * 255).type(torch.uint8)
                     intermediates.append(x_itermediate)
