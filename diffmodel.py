@@ -5,6 +5,8 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=log
 import math
 import numpy as np
 import torch.nn.functional as F
+import torchvision
+import os
 
 class Diffusion:
     def __init__(self, T=500, beta_start=1e-4, beta_end=0.02, img_size=64, device="cuda"):
@@ -103,7 +105,12 @@ class Diffusion:
                 if timesteps_to_save is not None and i in timesteps_to_save:
                     x_itermediate = (x.clamp(-1, 1) + 1) / 2
                     x_itermediate = (x_itermediate * 255).type(torch.uint8)
+                    x_image = torchvision.transforms.functional.to_pil_image(x_itermediate.squeeze(0) )
+                    # Save the image
+                    image_path = os.path.join('results/ddpm', f"image_at_timestep_{i}.png")
+                    x_image.save(image_path)
                     intermediates.append(x_itermediate)
+
 
         model.train()
         x = (x.clamp(-1, 1) + 1) / 2
