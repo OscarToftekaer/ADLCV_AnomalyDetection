@@ -1,8 +1,9 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, confusion_matrix,ConfusionMatrixDisplay
 from clf_dataset import CLF_Dataset
+from sample_dataset import samples_Dataset
 from classifiermodel import ResNet18
 from helpers import create_result_folders
 from torch.utils.data import DataLoader
@@ -21,7 +22,7 @@ DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/inference_split'
 IMG_SIZE = 128
 BATCH_SIZE = 32
 
-def load_data(data_dir, img_size, batch_size):
+def load_data(img_size, batch_size,ddim=False):
     # Define transforms
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -30,8 +31,12 @@ def load_data(data_dir, img_size, batch_size):
     ])
 
     # Initialize dataset
-    dataset = CLF_Dataset(transform=transform, data_dir=data_dir,inference=True)
-
+    if ddim == False:
+        DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/inference_split'
+        dataset = CLF_Dataset(transform=transform, data_dir=DATA_DIR,inference=True)
+    else:
+        DATA_DIR = '/work3/s194632/samples_ddim'
+        dataset = samples_Dataset(transform=transform, data_dir=DATA_DIR)
     # Define data loader
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
@@ -65,10 +70,10 @@ if __name__ == '__main__':
     model = ResNet18(pretrained=True, num_classes=2)  # Assuming 2 classes (healthy, ill)
     model.to(device)
     model.eval()
-    model.load_state_dict(torch.load('/zhome/76/b/147012/ADLCV_AnomalyDetection/models/clf/best_model_checkpoint.pth'
+    model.load_state_dict(torch.load('/zhome/76/b/147012/ADLCV_AnomalyDetection/models/clf/small_batch_diagnostic_best_model_checkpoint.pth'
                                      , map_location=device))
     # Load data
-    data_loader = load_data(DATA_DIR, IMG_SIZE, BATCH_SIZE)
+    data_loader = load_data(IMG_SIZE, BATCH_SIZE,ddim=False)
 
     # Compute scores
     predictions, labels = compute_scores(model, data_loader)
@@ -80,10 +85,11 @@ if __name__ == '__main__':
     print(labels)
     print('accuracy')
     print(accuracy(predictions,labels))
-    
+    cm = confusion_matrix(y_true=labels,y_pred=predictions)
+    print(cm)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,display_labels=['healthy','ill'])
     fpr, tpr, _ = roc_curve(labels, predictions)
     roc_auc = auc(fpr, tpr)
-
     plt.figure()
     plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
     plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
@@ -93,4 +99,9 @@ if __name__ == '__main__':
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.savefig('./results/clf/ROC.png', transparent = True, dpi = 400)
+    plt.savefig('./results/clf/ROC_diagnostic.png', transparent = True, dpi = 400)
+
+
+    #plt.figure()
+    disp.plot()
+    plt.savefig('./results/clf/confusion_matrix.png', transparent = True, dpi = 400)

@@ -20,11 +20,11 @@ from torch.utils.data import DataLoader
 with_logging = False
 
 DATASET_SIZE = None
-DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/classification_split'
+DATA_DIR = '/dtu/datasets1/ashery-chexpert/data/diffusion_split'
 IMG_SIZE = 128
-BATCH_SIZE = 5
-LR = 1e-3
-NUM_EPOCHS = 50
+BATCH_SIZE = 2
+LR = 1e-4
+NUM_EPOCHS = 20
 
 def clf_train(device = 'cuda', img_size = IMG_SIZE, batch_size = BATCH_SIZE, lr = LR, num_epochs = NUM_EPOCHS, experiment_name = 'clf', show = False):
     print('Classifier training starts')
@@ -34,6 +34,7 @@ def clf_train(device = 'cuda', img_size = IMG_SIZE, batch_size = BATCH_SIZE, lr 
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
+        transforms.GaussianBlur(kernel_size=(13, 9), sigma=(0.25, 5.)),
         transforms.RandomRotation(degrees=10),
         transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
         transforms.Normalize((0.5,), (0.5,)),
@@ -59,8 +60,10 @@ def clf_train(device = 'cuda', img_size = IMG_SIZE, batch_size = BATCH_SIZE, lr 
         param.requires_grad = True
     # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=LR)
-
+    #optimizer = optim.SGD(model.parameters(), lr=0.01,momentum = 0.9, weight_decay=1e-2)
+    #scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer,step_size_up=500, base_lr=LR, max_lr=0.1)
+    optimizer = optim.AdamW(model.parameters(), lr=LR)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',patience=5)
     # Training loop
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -84,7 +87,7 @@ def clf_train(device = 'cuda', img_size = IMG_SIZE, batch_size = BATCH_SIZE, lr 
             
             loss.backward()
             optimizer.step()
-            
+            #scheduler.step()
             running_loss += loss.item()
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
@@ -113,18 +116,19 @@ def clf_train(device = 'cuda', img_size = IMG_SIZE, batch_size = BATCH_SIZE, lr 
         
         val_loss /= len(val_loader)
         val_accuracy = 100.0 * val_correct / val_total
-        
+        scheduler.step(val_loss)
+
         print(f"Epoch [{epoch+1}/{NUM_EPOCHS}], "
             f"Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.2f}%, "
             f"Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%")
         
 
         # Check if this is the best epoch so far
-        if val_loss < best_val_loss:
+        if val_loss < best_val_loss :#and val_loss < train_loss:
             best_val_loss = val_loss
             best_epoch = epoch
             # Save the model checkpoint
-            torch.save(model.state_dict(), 'models/clf/best_model_checkpoint.pth')
+            torch.save(model.state_dict(), 'models/clf/small_batch_diagnostic_best_model_checkpoint.pth')
             print("Best model checkpoint saved!")
 
     print(f"Training finished. Best validation loss: {best_val_loss:.4f} at epoch {best_epoch+1}.")

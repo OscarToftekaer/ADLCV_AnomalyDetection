@@ -47,7 +47,7 @@ class CLF_Dataset(Dataset):
     def __getitem__(self, idx):
         npy_path = self.npy_files[idx]
         image = np.load(npy_path)
-        
+
         if self.transform:
             image = self.transform(image)
         else:
@@ -65,8 +65,10 @@ class CLF_Dataset(Dataset):
             assert first_part_relative_path in ['inf_PMill','inf_PMhealthy'], f"Unexpected class: {first_part_relative_path}"
             label = 0 if first_part_relative_path == 'inf_PMhealthy' else 1
         else:
-            assert first_part_relative_path in ['cla_NPMhealthy', 'cla_PMill'], f"Unexpected class: {first_part_relative_path}"
-            label = 0 if first_part_relative_path == 'cla_NPMhealthy' else 1
+            assert first_part_relative_path in ['dif_NPMhealthy', 'dif_NPMill'], f"Unexpected class: {first_part_relative_path}"
+            #assert first_part_relative_path in ['cla_NPMhealthy', 'cla_PMill'], f"Unexpected class: {first_part_relative_path}"
+            #label = 0 if first_part_relative_path == 'cla_NPMhealthy' else 1
+            label = 0 if first_part_relative_path == 'dif_NPMhealthy' else 1
         
         return image, label
 
@@ -90,8 +92,9 @@ if __name__ == "__main__":
     dataset = CLF_Dataset(transform=transform, data_dir=DATA_DIR)
 
 
-    for i in range(20):
+    for i in range(1):
         idx = i # Index of the instance you want to get the npy_path for
         image, label = dataset[idx]
+        print(image.shape)
         print(label)
         save_images(image,'./results/clf/test_'+str(i))
